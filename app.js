@@ -17,3 +17,5 @@ app.use("/api/v1", v1Router);
 app.listen(Config.PORT, () => {
     console.log(`Server listening on http://localhost:${Config.PORT}`);
 });
+
+module.exports = app;
