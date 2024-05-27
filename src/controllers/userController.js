@@ -64,6 +64,7 @@ userController.post("/login", (req, res) => {
             token: token,
             user: {
               id: user.id,
+              email: user.email
             },
             message: "User logged in successfully",
         });
