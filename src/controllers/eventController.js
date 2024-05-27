@@ -8,6 +8,7 @@ eventController.get("/", verifyToken, (req, res) => {
     if (req.user) {
       Event.find({ deleted_at: null })
         .populate("attendees", "name email")
+        .populate("organizer", "name email")
         .then((event) => {
           return res.status(200).json(event);
         })
@@ -37,6 +38,7 @@ eventController.post("/", verifyToken, (req, res) => {
         date: value.date,
         time: value.time,
         user: req.user._id,
+        organizer: req.user._id,
       });
 
       event
@@ -80,6 +82,8 @@ eventController.put("/:id", verifyToken, (req, res) => {
 
           event
             .save()
+            .populate("attendees", "name email")
+            .populate("organizer", "name email")
             .then((event) => {
               return res.status(200).json(event);
             })
@@ -150,7 +154,9 @@ eventController.post("/:id/register", verifyToken, (req, res) => {
           }
 
           if (event.user.toString() == req.user._id.toString()) {
-            return res.status(403).json({ message: "You are an organizer for this event" });
+            return res
+              .status(403)
+              .json({ message: "You are an organizer for this event" });
           }
 
           if (event.attendees.includes(req.user._id)) {
