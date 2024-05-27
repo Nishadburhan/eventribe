@@ -1,8 +1,14 @@
 const express = require("express");
 const eventController = express.Router();
 const Event = require("../models/Event");
+const transporter = require("../config/nodemailer");
 const { createEvent, updateEvent } = require("../helpers/validateEvent");
 const verifyToken = require("../middleware/authMiddleware");
+const {
+  getOrganizerEmailTemplate,
+  getAttendeeEmailTemplate,
+} = require("../helpers/emailTemplates");
+const Config = require("../config/config");
 eventController.get("/", verifyToken, (req, res) => {
   try {
     if (req.user) {
@@ -25,7 +31,7 @@ eventController.get("/", verifyToken, (req, res) => {
   }
 });
 
-eventController.post("/", verifyToken, (req, res) => {
+eventController.post("/", verifyToken, async (req, res) => {
   try {
     if (req.user) {
       const { error, value } = createEvent.validate(req.body);
@@ -43,7 +49,7 @@ eventController.post("/", verifyToken, (req, res) => {
 
       event
         .save()
-        .then((event) => {
+        .then(async (event) => {
           return res.status(201).json(event);
         })
         .catch((err) => {
@@ -144,7 +150,7 @@ eventController.delete("/:id", verifyToken, (req, res) => {
   }
 });
 
-eventController.post("/:id/register", verifyToken, (req, res) => {
+eventController.post("/:id/register", verifyToken, async (req, res) => {
   try {
     if (req.user) {
       Event.findById(req.params.id)
@@ -165,7 +171,20 @@ eventController.post("/:id/register", verifyToken, (req, res) => {
           event.attendees.push(req.user._id);
           event
             .save()
-            .then((event) => {
+            .then(async (event) => {
+              const attendee = req.user;
+
+              const attendeeMailOptions = {
+                from: Config.EMAIL_USER,
+                to: attendee.email,
+                subject: `Registration Confirmation for ${event.name}`,
+                html: getAttendeeEmailTemplate(
+                  attendee.name,
+                  event.name,
+                ),
+              };
+
+            //   await transporter.sendMail(attendeeMailOptions);
               return res.status(200).json(event);
             })
             .catch((error) => {
